@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Видеообои</string>
+    <string name="wallpaper_description">Одно воспроизведение выбранного MP4 при пробуждении экрана.</string>
+    <string name="intro">При включении экрана видео проиграется один раз. Последний кадр останется до следующего пробуждения.</string>
+    <string name="no_video">Видео не выбрано</string>
+    <string name="file_hint">Выберите MP4 из памяти телефона.</string>
+    <string name="choose">Выбрать MP4</string>
+    <string name="replace">Заменить видео</string>
+    <string name="importing">Подготовка видео…</string>
+    <string name="install">Установить обои</string>
+    <string name="install_hint">В окне установки выберите «Заблокированный экран». Если отдельного пункта нет, на Samsung можно установить видео через «Обои и стиль» → «Галерея».</string>
+    <string name="selection_hint">Если эти обои уже установлены, замена видео применится сразу.</string>
+    <string name="video_details">MP4 · %1$d:%2$02d · Без звука</string>
+    <string name="invalid_video">Не удалось прочитать видеодорожку MP4. Выберите другой файл.</string>
+    <string name="import_failed">Не удалось скопировать файл. Проверьте доступ к нему и свободное место на телефоне.</string>
+    <string name="playback_failed">Не удалось воспроизвести видео. Попробуйте MP4 с видеодорожкой H.264.</string>
+    <string name="no_picker">Системный выбор файла недоступен.</string>
+    <string name="install_blocked">Система запрещает менять обои для этого пользователя.</string>
+    <string name="no_installer">Системный установщик живых обоев недоступен.</string>
+    <string name="choose_service">В системном списке выберите «Видеообои».</string>
+</resources>
