@@ -55,7 +55,7 @@ class VideoWallpaperService : WallpaperService() {
 
         override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
             super.onSurfaceChanged(holder, format, width, height)
-            if (!destroyed) playback.setSurface(holder.surface)
+            if (!destroyed) playback.setSurface(holder.surface, width, height)
         }
 
         override fun onSurfaceRedrawNeeded(holder: SurfaceHolder) {

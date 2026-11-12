@@ -3,12 +3,16 @@ package dev.wakewall
 import android.content.Context
 import android.content.ContextWrapper
 import android.net.Uri
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.os.Bundle
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,6 +56,11 @@ class WallpaperPlaybackTest {
         onMain { playback.setInteractive(true) }
         first.awaitWhite()
         assertTrue(first.levels.first() < 60)
+        await("separate still renderer") {
+            var showing = false
+            onMain { showing = playback.showingStill }
+            showing
+        }
         SystemClock.sleep(250)
         val countAtEnd = first.levels.size
         onMain {
@@ -60,7 +69,8 @@ class WallpaperPlaybackTest {
         }
         SystemClock.sleep(2000)
         assertEquals("Captured levels: ${first.levels}", countAtEnd, first.levels.size)
-        assertTrue("Final texture after two seconds", first.displayedLevel() > 185)
+        val displayed = first.displayedLevel()
+        assertTrue("Expected white: displayed=$displayed, buffers=${first.levels}", displayed > 185)
 
         val replacement = newOutput()
         onMain {
@@ -77,15 +87,12 @@ class WallpaperPlaybackTest {
         assertTrue(replacement.levels.all { it > 185 })
         assertTrue("Final texture after redraw", replacement.displayedLevel() > 185)
 
-        onMain {
-            playback.setInteractive(false)
-            playback.setSurface(null)
-            playback.setInteractive(true)
-        }
-        val nextWake = newOutput()
-        onMain { playback.setSurface(nextWake.surface) }
-        nextWake.awaitWhite()
-        assertTrue("Next wake: ${nextWake.levels}", nextWake.levels.first() < 60)
+        // Some hosts keep the same native window across screen off/on.
+        onMain { playback.setInteractive(false) }
+        val start = replacement.levels.size
+        onMain { playback.setInteractive(true) }
+        await("new dark first frame on the same surface") { replacement.levels.drop(start).any { it < 60 } }
+        replacement.awaitWhite()
     }
 
     @Test fun temporaryInvisibilityResumesAndSleepHalfwayRearms() {
@@ -140,6 +147,43 @@ class WallpaperPlaybackTest {
     }
 
     private fun onMain(block: () -> Unit) = instrumentation.runOnMainSync(block)
+
+    // Opt-in device diagnostic. Only aggregate differences leave the phone.
+    @Test fun compareSelectedClipEndpoints() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("checkSelected") == "true")
+        val clip = VideoStore.current(app)
+        assumeTrue("No video selected in this installation", clip != null)
+        val file = requireNotNull(clip).file
+        val first = android.media.MediaMetadataRetriever().use {
+            it.setDataSource(file.absolutePath)
+            requireNotNull(it.getScaledFrameAtTime(0, android.media.MediaMetadataRetriever.OPTION_CLOSEST, 64, 64))
+        }
+        val output = newOutput()
+        onMain {
+            playback.setFile(file)
+            playback.setSurface(output.surface, first.width, first.height)
+            playback.setInteractive(true)
+            playback.setVisible(true)
+        }
+        val until = SystemClock.elapsedRealtime() + clip.durationMs + 10_000
+        var last: Bitmap? = null
+        while (last == null && SystemClock.elapsedRealtime() < until) {
+            onMain { last = playback.heldFrame }
+            SystemClock.sleep(30)
+        }
+        val thumbnail = Bitmap.createScaledBitmap(requireNotNull(last), first.width, first.height, true)
+        var difference = 0L
+        for (y in 0 until first.height) for (x in 0 until first.width) {
+            val a = first.getPixel(x, y)
+            val b = thumbnail.getPixel(x, y)
+            difference += kotlin.math.abs(Color.red(a) - Color.red(b)) +
+                kotlin.math.abs(Color.green(a) - Color.green(b)) + kotlin.math.abs(Color.blue(a) - Color.blue(b))
+        }
+        val mean = difference.toDouble() / (first.width * first.height * 3)
+        instrumentation.sendStatus(0, Bundle().apply {
+            putString("stream", "Selected MP4: duration=${clip.durationMs}ms, mean endpoint RGB difference=$mean / 255\n")
+        })
+    }
     private fun newOutput() = FrameCapture().also(outputs::add)
 
     private fun FrameCapture.awaitWhite() {
