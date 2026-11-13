@@ -2,6 +2,7 @@
 
 Видеообои для Android 12 и новее. При включении экрана выбранный MP4 проигрывается один раз без звука. Последний кадр остаётся видимым до выключения экрана. При следующем пробуждении видео запускается с начала.
 
+Video wallpaper for Android 12 and later. When the screen is turned on, the selected MP4 is played once without sound. The last frame remains visible until the screen is turned off. The next time the screen is awakened, the video starts from the beginning.
 ## Установка обоев
 
 1. Установите APK и откройте приложение «Видеообои».
